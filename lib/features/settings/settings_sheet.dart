@@ -1,0 +1,179 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/constants.dart';
+import '../../core/theme.dart';
+import '../../providers/settings_provider.dart';
+import 'times_editor_page.dart';
+
+void showSettings(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => const _SettingsSheet(),
+  );
+}
+
+class SettingsButton extends StatelessWidget {
+  const SettingsButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () => showSettings(context),
+      icon: const Icon(Icons.settings_outlined),
+      tooltip: 'Settings',
+    );
+  }
+}
+
+class _SettingsSheet extends ConsumerWidget {
+  const _SettingsSheet();
+
+  Widget _title(BuildContext c, String t) => Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 10),
+        child: Text(t,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: .6,
+                color: c.pal.accent)),
+      );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
+    final s = ref.watch(settingsProvider);
+    final n = ref.read(settingsProvider.notifier);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Settings',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              _title(context, 'NAMAZ KE WAQT'),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (var i = 0; i < cities.length; i++)
+                  ChoiceChip(
+                      label: Text(cities[i].name),
+                      selected: s.city == i,
+                      onSelected: (_) => n.setCity(i)),
+              ]),
+              const SizedBox(height: 14),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: true, label: Text('Asr: Hanafi')),
+                  ButtonSegment(value: false, label: Text("Asr: Shafi'i")),
+                ],
+                selected: {s.hanafi},
+                onSelectionChanged: (v) => n.setHanafi(v.first),
+              ),
+              const SizedBox(height: 10),
+              AppTile(
+                icon: Icons.edit_calendar_outlined,
+                title: 'Apne namaz ke waqt set karein',
+                subtitle: s.anyCustom
+                    ? 'Aapke kuch waqt badle hue hain'
+                    : 'Masjid ke hisaab se har namaz ka waqt badlein',
+                onTap: () {
+                  final nav = Navigator.of(context);
+                  nav.pop();
+                  nav.push(MaterialPageRoute<void>(
+                      builder: (_) => const TimesEditorPage()));
+                },
+              ),
+              _title(context, 'HIJRI TAREEKH'),
+              Text('Chaand dikhne ke hisaab se 1 din aage/peeche karein.',
+                  style: TextStyle(color: p.muted, fontSize: 12)),
+              const SizedBox(height: 10),
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: -1, label: Text('-1 din')),
+                  ButtonSegment(value: 0, label: Text('Auto')),
+                  ButtonSegment(value: 1, label: Text('+1 din')),
+                ],
+                selected: {s.hijriAdj},
+                onSelectionChanged: (v) => n.setHijriAdj(v.first),
+              ),
+              _title(context, 'THEME'),
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(
+                      value: 0,
+                      icon: Icon(Icons.brightness_auto_outlined),
+                      label: Text('Auto')),
+                  ButtonSegment(
+                      value: 1,
+                      icon: Icon(Icons.light_mode_outlined),
+                      label: Text('Light')),
+                  ButtonSegment(
+                      value: 2,
+                      icon: Icon(Icons.dark_mode_outlined),
+                      label: Text('Dark')),
+                ],
+                selected: {s.themeMode},
+                onSelectionChanged: (v) => n.setThemeMode(v.first),
+              ),
+              _title(context, 'PERSONAL'),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Special days (optional)'),
+                subtitle: Text(
+                    'Un dino ke liye jab namaz farz nahi hoti. On karne par un dino me namaz ki jagah dhikr ka special routine milta hai. Default me band.',
+                    style: TextStyle(fontSize: 12, color: p.muted)),
+                value: s.restEnabled,
+                onChanged: n.setRestEnabled,
+              ),
+            ]),
+      ),
+    );
+  }
+}
+
+/// Tappable row used in settings.
+class AppTile extends StatelessWidget {
+  final IconData icon;
+  final String title, subtitle;
+  final VoidCallback onTap;
+  const AppTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Material(
+      color: p.surface2,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            Icon(icon, color: p.accent),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(subtitle,
+                        style: TextStyle(fontSize: 12, color: p.muted)),
+                  ]),
+            ),
+            Icon(Icons.chevron_right, color: p.faint),
+          ]),
+        ),
+      ),
+    );
+  }
+}

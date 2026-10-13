@@ -1,0 +1,21 @@
+name: namaz_app
+description: Islamic calendar, namaz tracker, dhikr counter, watch faces and alarm timer.
+publish_to: none
+version: 1.3.0+4
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  hijri: ^3.0.0
+  shared_preferences: ^2.2.3
+  audioplayers: ^6.0.0
+  adhan: ^2.0.0+1
+  http: ^1.2.2
+flutter:
+  uses-material-design: true
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
