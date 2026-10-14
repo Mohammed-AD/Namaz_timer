@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../providers/backup.dart';
+import '../../providers/log_provider.dart';
+import '../../providers/prefs_provider.dart';
+import '../../providers/rest_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/wird_provider.dart';
+import 'city_picker.dart';
 import 'times_editor_page.dart';
 
 void showSettings(BuildContext context) {
@@ -40,6 +46,43 @@ class _SettingsSheet extends ConsumerWidget {
                 color: c.pal.accent)),
       );
 
+  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+    final msg = ScaffoldMessenger.of(context);
+    final clip = (await Clipboard.getData(Clipboard.kTextPlain))?.text ?? '';
+    if (!context.mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Backup restore karein?'),
+        content: Text(clip.trim().isEmpty
+            ? 'Clipboard khaali hai. Pehle apna backup text copy karein.'
+            : 'Clipboard ka backup lagu hoga aur maujooda data badal jayega.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          if (clip.trim().isNotEmpty)
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Restore')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await importBackup(ref.read(prefsProvider), clip);
+      ref
+        ..invalidate(settingsProvider)
+        ..invalidate(logProvider)
+        ..invalidate(specialLogProvider)
+        ..invalidate(restProvider)
+        ..invalidate(wirdProvider);
+      msg.showSnackBar(const SnackBar(content: Text('Backup restore ho gaya.')));
+    } on FormatException catch (e) {
+      msg.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
@@ -55,13 +98,12 @@ class _SettingsSheet extends ConsumerWidget {
               const Text('Settings',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
               _title(context, 'NAMAZ KE WAQT'),
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                for (var i = 0; i < cities.length; i++)
-                  ChoiceChip(
-                      label: Text(cities[i].name),
-                      selected: s.city == i,
-                      onSelected: (_) => n.setCity(i)),
-              ]),
+              AppTile(
+                icon: Icons.location_on_outlined,
+                title: s.place.name,
+                subtitle: 'Shehar badlein ya apni jagah daalein',
+                onTap: () => showCityPicker(context),
+              ),
               const SizedBox(height: 14),
               SegmentedButton<bool>(
                 segments: const [
@@ -98,6 +140,15 @@ class _SettingsSheet extends ConsumerWidget {
                 selected: {s.hijriAdj},
                 onSelectionChanged: (v) => n.setHijriAdj(v.first),
               ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Maghrib par tareekh badlein'),
+                subtitle: Text(
+                    'Islami din Maghrib se shuru hota hai. On karne par Maghrib ke baad agli Hijri tareekh dikhegi.',
+                    style: TextStyle(fontSize: 12, color: p.muted)),
+                value: s.hijriMaghrib,
+                onChanged: n.setHijriMaghrib,
+              ),
               _title(context, 'THEME'),
               SegmentedButton<int>(
                 segments: const [
@@ -122,11 +173,40 @@ class _SettingsSheet extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Special days (optional)'),
                 subtitle: Text(
-                    'Un dino ke liye jab namaz farz nahi hoti. On karne par un dino me namaz ki jagah dhikr ka special routine milta hai. Default me band.',
+                    'For the days when namaz is not obligatory. When on, those days show a dhikr routine instead of namaz tracking. Off by default.',
                     style: TextStyle(fontSize: 12, color: p.muted)),
                 value: s.restEnabled,
                 onChanged: n.setRestEnabled,
               ),
+              _title(context, 'BACKUP'),
+              Text(
+                  'Namaz log, wird aur settings sirf is phone me hain. Phone badalne ya app delete karne se pehle backup copy kar lein.',
+                  style: TextStyle(color: p.muted, fontSize: 12)),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final msg = ScaffoldMessenger.of(context);
+                      await Clipboard.setData(ClipboardData(
+                          text: exportBackup(ref.read(prefsProvider))));
+                      msg.showSnackBar(const SnackBar(
+                          content: Text(
+                              'Backup copy ho gaya. Kisi safe jagah paste karke rakh lein.')));
+                    },
+                    icon: const Icon(Icons.copy_all_outlined),
+                    label: const Text('Backup copy'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _restore(context, ref),
+                    icon: const Icon(Icons.restore),
+                    label: const Text('Restore'),
+                  ),
+                ),
+              ]),
             ]),
       ),
     );

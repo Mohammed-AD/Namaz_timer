@@ -8,6 +8,7 @@ import '../../providers/clock_provider.dart';
 import '../../providers/prayer_times_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../settings/settings_sheet.dart';
+import '../watch/watch_page.dart';
 import 'times_sheet.dart';
 
 /// Global header: tiny watch on the left, Makkah / Madinah / your city on the
@@ -39,10 +40,12 @@ class _MiniClock extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
     final now = ref.watch(secondProvider).value ?? DateTime.now();
-    final adj = ref.watch(settingsProvider.select((s) => s.hijriAdj));
-    final h = hijriOf(now, adj);
+    final h = ref.watch(hijriNowProvider);
     final h12 = now.hour % 12 == 0 ? 12 : now.hour % 12;
-    return FittedBox(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => showWatchPage(context),
+      child: FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -70,7 +73,7 @@ class _MiniClock extends ConsumerWidget {
         Text('${now.day} ${months[now.month - 1]} · ${h.hDay} ${hMonths[h.hMonth - 1]}',
             style: TextStyle(fontSize: 11, color: p.muted)),
       ]),
-    );
+    ));
   }
 }
 
@@ -85,7 +88,7 @@ class _CityStrip extends ConsumerWidget {
     // The user's city follows the device timezone.
     final localToday = dayOnly(now);
     final localTomorrow = shift(localToday, 1);
-    final city = ref.watch(settingsProvider.select((s) => s.city));
+    final placeName = ref.watch(settingsProvider.select((s) => s.place.name));
     final mine = nextPrayer(now, ref.watch(prayerTimesProvider(localToday)),
         ref.watch(prayerTimesProvider(localTomorrow)));
 
@@ -127,7 +130,7 @@ class _CityStrip extends ConsumerWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           line('Makkah', p.gold, mk, holyUtcMinutes),
           line('Madinah', p.gold, md, holyUtcMinutes),
-          line(cities[city].name, p.accent, mine, null),
+          line(placeName, p.accent, mine, null),
         ]),
       ),
     );

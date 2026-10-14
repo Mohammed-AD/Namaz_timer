@@ -42,7 +42,7 @@ class TimesEditorPage extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                  '${cities[s.city].name} ke hisaab se waqt nikle hain. Apne masjid / ilaake ke waqt ke mutabik har namaz ko -/+ minute se badlein, ya "Waqt chuno" se exact waqt daalein. Yeh sab jagah (Namaz, Calendar, top corner) lagu hoga.',
+                  '${s.place.name} ke hisaab se waqt nikle hain. Apne masjid / ilaake ke waqt ke mutabik har namaz ko -/+ minute se badlein, ya "Waqt chuno" se exact waqt daalein. Yeh sab jagah (Namaz, Calendar, top corner) lagu hoga.',
                   style: TextStyle(fontSize: 13, color: p.text)),
             ),
           ]),

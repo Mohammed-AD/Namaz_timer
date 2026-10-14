@@ -1,4 +1,4 @@
-# namaz_app (v1.3)
+# Namaz Timer (v1.4)
 
 Namaz tracker, Hijri calendar, Wird (surah + dhikr), timer, and live Makkah/Madinah prayer sync. State: **Riverpod**.
 
@@ -38,3 +38,29 @@ Old dhikr counter data is replaced by the new Wird list (defaults are seeded).
 - The times sheet now shows live/cache/offline status and has a manual refresh action.
 - `http: ^1.2.2` is the only new direct package.
 - The API provider itself warns that its timings may differ from a local mosque or government authority. Do not present API timings as official Haram iqama times.
+
+
+## v1.4 changes
+
+**Fixes**
+- Manual refresh in the Makkah/Madinah sheet now really re-fetches (it used to return the 15-min cache).
+- A cache entry younger than 15 min is shown as "Live", not as a misleading offline/cached icon.
+- The live-sync loop stops when its provider is disposed.
+- "Ayyam al-Bidh · sunnah roza" no longer shows during Ramadan (13-15 Ramadan are obligatory fasts).
+- The orphaned watch face is reachable again: tap the mini clock in the top bar (always dark, so hands stay visible).
+- Removed dead code: old root `main.dart`, `rest_card.dart`, and the unused dhikr page/provider (replaced by Wird).
+- App name is now "Namaz Timer" on Android, iOS and web.
+
+**New**
+- Current prayer window on the Namaz page ("Zohar ka waqt chal raha hai · 1h 20m baaki").
+- Optional: Hijri date changes at Maghrib (Settings > Hijri tareekh).
+- 18 more cities, searchable city picker, and a custom location (latitude / longitude).
+- Qibla bearing in the times sheet.
+- Backup / Restore of all app data through the clipboard (no new packages).
+
+**Before publishing to the Play Store / App Store** change the package id `com.example.namaz_app`.
+
+**Special days (v1.4)**
+- Calendar: special days are one connected band with a sparkle icon; tap a day for "Din 3 / 6" and the start - end dates.
+- Calendar: month count ("Is mahine me N special din") and a "Special days ka record" card (every run, duration, average, cycle, gentle estimate of the next one, delete wrong entries).
+- Namaz tab: start from today / yesterday / any date; end by choosing the last special day; shows start date, day count and the previous duration.

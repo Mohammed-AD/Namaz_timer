@@ -3,6 +3,8 @@
   switch (m * 100 + d) {
     case 101:
       return (name: 'Islamic New Year', major: true);
+    case 109:
+      return (name: "Tasu'a (sunnah roza with Ashura)", major: false);
     case 110:
       return (name: 'Ashura', major: true);
     case 312:
@@ -25,7 +27,8 @@
   if (m == 12 && d >= 11 && d <= 13) {
     return (name: 'Ayyam al-Tashreeq', major: false);
   }
-  if (d >= 13 && d <= 15) {
+  // Ramadan's fasts are obligatory, so the "sunnah roza" label would be wrong.
+  if (m != 9 && d >= 13 && d <= 15) {
     return (name: 'Ayyam al-Bidh · sunnah roza', major: false);
   }
   return null;

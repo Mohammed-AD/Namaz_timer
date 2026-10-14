@@ -43,16 +43,25 @@ class HolyTimesService {
   const HolyTimesService(this.prefs,
       {required this.client, required this.localFallback});
 
-  Future<HolyTimesFetchResult> load(DateTime day) async {
+  /// [force] skips the 15-minute cache (used by the manual refresh button).
+  Future<HolyTimesFetchResult> load(DateTime day, {bool force = false}) async {
     final d = dayOnly(day);
     final cacheKey = _cacheKey(d);
 
     final cached = _readCache(d);
     final fetchedAt = cached?.fetchedAt;
-    if (cached != null &&
-      fetchedAt != null &&
-      DateTime.now().difference(fetchedAt) < _cacheTtl) {
-      return cached;
+    if (!force &&
+        cached != null &&
+        fetchedAt != null &&
+        DateTime.now().difference(fetchedAt) < _cacheTtl) {
+      // A cache entry younger than the TTL IS the live schedule, so report it
+      // as live instead of showing a misleading "offline / cached" icon.
+      return HolyTimesFetchResult(
+        makkah: cached.makkah,
+        madinah: cached.madinah,
+        source: HolyTimesSource.liveApi,
+        fetchedAt: fetchedAt,
+      );
     }
 
     try {

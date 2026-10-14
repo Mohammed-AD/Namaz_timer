@@ -16,7 +16,7 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(settingsProvider.select((s) => s.themeMode));
     return MaterialApp(
-      title: 'Namaz & Islamic Calendar',
+      title: 'Namaz Timer',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.values[mode],
       theme: buildTheme(AppPalette.light, Brightness.light),

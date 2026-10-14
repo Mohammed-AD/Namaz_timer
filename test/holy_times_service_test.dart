@@ -54,8 +54,45 @@ void main() {
     );
     final cached = await cachedService.load(DateTime(2026, 10, 6));
 
-    expect(cached.source, HolyTimesSource.cache);
+    // Younger than the 15-minute TTL, so it is still the live schedule.
+    expect(cached.source, HolyTimesSource.liveApi);
     expect(cached.makkah.fajr, result.makkah.fajr);
+  });
+
+  test('force bypasses the fresh cache (manual refresh button)', () async {
+    final prefs = await SharedPreferences.getInstance();
+    var calls = 0;
+    final client = MockClient((request) async {
+      calls++;
+      return http.Response(
+        jsonEncode({
+          'code': 200,
+          'data': {
+            'timings': {
+              'Fajr': '04:15',
+              'Sunrise': '05:35',
+              'Dhuhr': '12:05',
+              'Asr': '15:25',
+              'Maghrib': '18:20',
+              'Isha': '19:50',
+            },
+          },
+        }),
+        200,
+      );
+    });
+    final service = HolyTimesService(
+      prefs,
+      client: client,
+      localFallback: (_) => throw StateError('Unexpected fallback'),
+    );
+
+    await service.load(DateTime(2026, 10, 6));
+    expect(calls, 2); // Makkah + Madinah
+    await service.load(DateTime(2026, 10, 6));
+    expect(calls, 2); // served from cache
+    await service.load(DateTime(2026, 10, 6), force: true);
+    expect(calls, 4); // forced network load
   });
 
   test('uses the local schedule when the API is unavailable', () async {

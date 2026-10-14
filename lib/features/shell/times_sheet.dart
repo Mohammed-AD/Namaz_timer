@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
 import '../../core/format.dart';
+import '../../core/prayer_utils.dart';
 import '../../core/theme.dart';
 import '../../providers/clock_provider.dart';
 import '../../providers/holy_times_service.dart';
@@ -79,7 +80,10 @@ class _TimesSheet extends ConsumerWidget {
               tooltip: 'Live timings refresh',
               onPressed: liveHoly.isLoading
                   ? null
-                  : () => ref.invalidate(holyTimesProvider(today)),
+                  : () {
+                      ref.read(holyRefreshProvider.notifier).state++;
+                      ref.invalidate(holyTimesProvider(today));
+                    },
               icon: const Icon(Icons.refresh_rounded),
             ),
           ]),
@@ -123,7 +127,7 @@ class _TimesSheet extends ConsumerWidget {
             columnWidths: const {0: FlexColumnWidth(1.1)},
             border: TableBorder(horizontalInside: BorderSide(color: p.line)),
             children: [
-              row('', 'Makkah', 'Madinah', cities[s.city].name, head: true),
+              row('', 'Makkah', 'Madinah', s.place.name, head: true),
               for (var i = 0; i < 5; i++)
                 row(prayers[i], fmtZ(mk[i], holyUtcMinutes),
                     fmtZ(md[i], holyUtcMinutes), fmt(mine[i]),
@@ -134,9 +138,24 @@ class _TimesSheet extends ConsumerWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-                'Makkah / Madinah: Saudi local time (UTC+3), Umm al-Qura.\n${cities[s.city].name}: aapke set kiye hue waqt${s.anyCustom ? ' (hare = aapne badla)' : ''}.',
+                'Makkah / Madinah: Saudi local time (UTC+3), Umm al-Qura.\n${s.place.name}: aapke set kiye hue waqt${s.anyCustom ? ' (hare = aapne badla)' : ''}.',
                 style: TextStyle(color: p.muted, fontSize: 12)),
           ),
+          const SizedBox(height: 8),
+          Builder(builder: (_) {
+            final q = qiblaBearing(s.place);
+            return Row(children: [
+              Transform.rotate(
+                  angle: q * 3.141592653589793 / 180,
+                  child: Icon(Icons.navigation_rounded, size: 18, color: p.gold)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                    'Qibla (${s.place.name}): ${q.toStringAsFixed(0)}° ${compassName(q)} (true north se)',
+                    style: TextStyle(color: p.muted, fontSize: 12)),
+              ),
+            ]);
+          }),
           const SizedBox(height: 8),
           Text(
             holy.warning ??

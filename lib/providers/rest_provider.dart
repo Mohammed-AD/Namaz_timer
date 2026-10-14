@@ -23,6 +23,15 @@ class RestRange {
 
   bool covers(String k) =>
       k.compareTo(start) >= 0 && (end == null || k.compareTo(end!) <= 0);
+
+  DateTime get startDate => parseKey(start);
+
+  /// Last special day (today while the run is still going).
+  DateTime lastDay(DateTime today) => end == null ? today : parseKey(end!);
+
+  /// Number of days in this run, counting the first and the last day.
+  int length(DateTime today) =>
+      math.max(1, daysBetween(startDate, lastDay(today)) + 1);
 }
 
 class RestState {
@@ -42,6 +51,39 @@ class RestState {
 
   RestRange? get open =>
       ranges.isNotEmpty && ranges.last.end == null ? ranges.last : null;
+
+  /// The run that contains [d], if any.
+  RestRange? rangeOf(DateTime d) {
+    final k = dayKey(d);
+    for (final r in ranges) {
+      if (r.covers(k)) return r;
+    }
+    return null;
+  }
+
+  /// Finished runs only, oldest first.
+  List<RestRange> get finished => ranges.where((r) => r.end != null).toList();
+
+  /// Average length (days) of finished runs, null if there are none.
+  double? avgLength(DateTime today) {
+    final f = finished;
+    if (f.isEmpty) return null;
+    return f.fold<int>(0, (a, r) => a + r.length(today)) / f.length;
+  }
+
+  /// Average gap between the starts of consecutive runs (last 6 gaps).
+  /// Gaps outside 15-90 days are ignored as data-entry mistakes.
+  int? avgCycle() {
+    final starts = ranges.map((r) => r.startDate).toList()..sort();
+    final gaps = <int>[];
+    for (var i = 1; i < starts.length; i++) {
+      final g = daysBetween(starts[i - 1], starts[i]);
+      if (g >= 15 && g <= 90) gaps.add(g);
+    }
+    if (gaps.isEmpty) return null;
+    final recent = gaps.length > 6 ? gaps.sublist(gaps.length - 6) : gaps;
+    return (recent.fold<int>(0, (a, b) => a + b) / recent.length).round();
+  }
 
   RestState copyWith({List<RestRange>? ranges, int? done, int? extra}) =>
       RestState(
@@ -76,17 +118,36 @@ class RestNotifier extends Notifier<RestState> {
 
   void start(DateTime from) {
     if (state.open != null) return;
-    state = state.copyWith(ranges: [...state.ranges, RestRange(dayKey(from))]);
+    var s = dayOnly(from);
+    // Never overlap the previous run.
+    if (state.ranges.isNotEmpty) {
+      final prevEnd = state.ranges.last.end;
+      if (prevEnd != null && dayKey(s).compareTo(prevEnd) <= 0) {
+        s = shift(parseKey(prevEnd), 1);
+      }
+    }
+    state = state.copyWith(ranges: [...state.ranges, RestRange(dayKey(s))]);
+    _saveRanges();
+  }
+
+  /// Ends the ongoing run; [lastDay] is the final special day.
+  void endLast(DateTime lastDay) {
+    final o = state.open;
+    if (o == null) return;
+    final last = dayKey(lastDay);
+    final list = [...state.ranges]..removeLast();
+    if (last.compareTo(o.start) >= 0) list.add(RestRange(o.start, last));
+    state = state.copyWith(ranges: list);
     _saveRanges();
   }
 
   /// Ends the ongoing run. [today] itself is not a rest day any more.
-  void end(DateTime today) {
-    final o = state.open;
-    if (o == null) return;
-    final last = dayKey(shift(today, -1));
-    final list = [...state.ranges]..removeLast();
-    if (last.compareTo(o.start) >= 0) list.add(RestRange(o.start, last));
+  void end(DateTime today) => endLast(shift(today, -1));
+
+  /// Deletes one saved run (for a wrong entry).
+  void removeAt(int index) {
+    if (index < 0 || index >= state.ranges.length) return;
+    final list = [...state.ranges]..removeAt(index);
     state = state.copyWith(ranges: list);
     _saveRanges();
   }

@@ -133,7 +133,7 @@ class _Tile extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                               special
-                                  ? 'Dhikr ka waqt · ${specialIdeas[i]}'
+                                  ? 'Dhikr time · ${specialIdeas[i]}'
                                   : arabic[i],
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

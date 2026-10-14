@@ -1,11 +1,14 @@
 
 import 'package:adhan/adhan.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hijri/hijri_calendar.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/constants.dart';
 import '../core/day_times.dart';
 import '../core/format.dart';
+import '../core/prayer_utils.dart';
+import 'clock_provider.dart';
 import 'holy_times_service.dart';
 import 'prefs_provider.dart';
 import 'settings_provider.dart';
@@ -26,8 +29,7 @@ bool _isHolyCity(City c) => c.name == 'Makkah' || c.name == 'Madinah';
 /// Calculated times for the user's city, before any manual change.
 final autoTimesProvider =
     Provider.autoDispose.family<DayTimes, DateTime>((ref, day) {
-  final city = ref.watch(settingsProvider.select((s) => s.city));
-  final selected = cities[city];
+  final selected = ref.watch(settingsProvider.select((s) => s.place));
   final hanafi = ref.watch(settingsProvider.select((s) => s.hanafi));
   return computeTimes(selected, day,
       hanafi: hanafi, umm: _isHolyCity(selected));
@@ -70,6 +72,11 @@ DayTimes _toSaudiUtc(DayTimes t) => DayTimes(
       wallClockToUtc(t.isha, holyUtcMinutes),
     );
 
+/// Bump this to force the next Makkah / Madinah load to skip the cache
+/// (the refresh button in the times sheet does this).
+final holyRefreshProvider = StateProvider<int>((ref) => 0);
+int _lastForceTick = 0; // so one tap forces exactly one network load
+
 /// Live Makkah / Madinah schedule.
 ///
 /// Primary source: AlAdhan API + Umm Al-Qura method.
@@ -77,7 +84,11 @@ DayTimes _toSaudiUtc(DayTimes t) => DayTimes(
 final holyTimesProvider = StreamProvider.autoDispose
     .family<HolyTimesFetchResult, DateTime>((ref, day) async* {
   final client = http.Client();
-  ref.onDispose(client.close);
+  var disposed = false;
+  ref.onDispose(() {
+    disposed = true;
+    client.close();
+  });
 
   final service = HolyTimesService(
     ref.read(prefsProvider),
@@ -85,8 +96,13 @@ final holyTimesProvider = StreamProvider.autoDispose
     localFallback: localHolyTimes,
   );
 
-  while (true) {
-    yield await service.load(day);
+  // Read (not watch): a forced refresh re-runs this provider via invalidate.
+  final tick = ref.read(holyRefreshProvider);
+  var force = tick != _lastForceTick;
+  _lastForceTick = tick;
+  while (!disposed) {
+    yield await service.load(day, force: force);
+    force = false;
     await Future<void>.delayed(const Duration(minutes: 15));
   }
 });
@@ -103,3 +119,31 @@ final localHolyTimesProvider = Provider.autoDispose
   }
   return (0, tomorrow.fajr);
 }
+
+
+/// Today's Hijri date as the user wants to see it. With "Hijri day starts at
+/// Maghrib" switched on, the date moves to the next day at sunset, which is
+/// when the Islamic day really begins.
+final hijriNowProvider = Provider.autoDispose<HijriCalendar>((ref) {
+  final now = ref.watch(pulseProvider).value ?? DateTime.now();
+  final hijriMaghrib = ref.watch(settingsProvider.select((s) => s.hijriMaghrib));
+  final adj = ref.watch(settingsProvider.select((s) => s.hijriAdj));
+  final day = dayOnly(now);
+  var extra = 0;
+  if (hijriMaghrib && !now.isBefore(ref.watch(prayerTimesProvider(day)).maghrib)) {
+    extra = 1;
+  }
+  return hijriOf(day, adj + extra);
+});
+
+/// The prayer running right now (null between sunrise and Zohar).
+final currentWindowProvider = Provider.autoDispose<PrayerWindow?>((ref) {
+  final now = ref.watch(pulseProvider).value ?? DateTime.now();
+  final day = dayOnly(now);
+  return currentWindow(
+    now,
+    ref.watch(prayerTimesProvider(shift(day, -1))),
+    ref.watch(prayerTimesProvider(day)),
+    ref.watch(prayerTimesProvider(shift(day, 1))),
+  );
+});

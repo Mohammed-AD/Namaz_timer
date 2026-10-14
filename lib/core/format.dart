@@ -66,3 +66,13 @@ HijriCalendar hijriOf(DateTime d, int adj) =>
 
 String hijriText(HijriCalendar h) =>
     '${h.hDay} ${hMonths[h.hMonth - 1]} ${h.hYear} AH';
+
+/// Whole calendar days from [a] to [b] (b - a). Safe across DST changes.
+int daysBetween(DateTime a, DateTime b) =>
+    DateTime.utc(b.year, b.month, b.day)
+        .difference(DateTime.utc(a.year, a.month, a.day))
+        .inDays;
+
+/// "10 Oct" (year added only when it is not the current year).
+String fmtDay(DateTime d, DateTime today) =>
+    '${d.day} ${months[d.month - 1]}${d.year == today.year ? '' : ' ${d.year}'}';

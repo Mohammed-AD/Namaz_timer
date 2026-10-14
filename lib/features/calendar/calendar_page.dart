@@ -14,6 +14,7 @@ import '../../providers/rest_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common.dart';
 import '../namaz/prayer_tiles.dart';
+import 'special_history.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -80,6 +81,13 @@ class _CalState extends ConsumerState<CalendarPage> {
     final lead = first.weekday % 7;
     final selH = hijriOf(sel, adj);
     final ev = islamicEvent(selH.hMonth, selH.hDay);
+    final selRange = restOn ? rest.rangeOf(sel) : null;
+    var monthSpecial = 0;
+    if (restOn) {
+      for (var d = 1; d <= days; d++) {
+        if (rest.isRest(_greg(d))) monthSpecial++;
+      }
+    }
 
     Widget dayCell(int d) {
       final g = _greg(d);
@@ -89,17 +97,30 @@ class _CalState extends ConsumerState<CalendarPage> {
       final c = isSpecial ? slog.count(g) : log.count(g);
       final e = islamicEvent(hm, d);
       final tint = isSpecial ? p.special : p.accent;
+      // Special days form one connected band (rounded only at the two ends
+      // of a run and at the week edges).
+      final col = (lead + d - 1) % 7;
+      final joinL = isSpecial && rest.isRest(shift(g, -1)) && col != 0;
+      final joinR = isSpecial && rest.isRest(shift(g, 1)) && col != 6;
+      final band = isSpecial && !isSel;
+      final rad = band
+          ? BorderRadius.horizontal(
+              left: Radius.circular(joinL ? 0 : 14),
+              right: Radius.circular(joinR ? 0 : 14))
+          : BorderRadius.circular(14);
       return InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: rad,
         onTap: () => setState(() => sel = g),
         child: Container(
-          margin: const EdgeInsets.all(2),
+          margin: band
+              ? EdgeInsets.fromLTRB(joinL ? 0 : 2, 2, joinR ? 0 : 2, 2)
+              : const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: rad,
             color: isSel
                 ? p.accent
                 : isSpecial
-                    ? p.specialSoft
+                    ? p.special.withValues(alpha: .2)
                     : p.surface,
             border: Border.all(
                 color: isToday && !isSel ? p.accent : Colors.transparent,
@@ -119,18 +140,23 @@ class _CalState extends ConsumerState<CalendarPage> {
                     fontSize: 10,
                     color: isSel ? p.onAccent.withValues(alpha: .7) : p.faint)),
             const SizedBox(height: 2),
-            Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSpecial
-                        ? tint.withValues(alpha: .35 + .13 * c)
-                        : c == 0
-                            ? Colors.transparent
-                            : (isSel
-                                ? p.onAccent
-                                : tint.withValues(alpha: .35 + .13 * c)))),
+            if (isSpecial)
+              Icon(Icons.auto_awesome,
+                  size: 10,
+                  color: isSel
+                      ? p.onAccent
+                      : p.special.withValues(alpha: (.55 + .09 * c).clamp(0.0, 1.0)))
+            else
+              Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: c == 0
+                          ? Colors.transparent
+                          : (isSel
+                              ? p.onAccent
+                              : tint.withValues(alpha: .35 + .13 * c)))),
           ]),
         ),
       );
@@ -213,6 +239,17 @@ class _CalState extends ConsumerState<CalendarPage> {
                         style: TextStyle(color: p.muted, fontSize: 12)),
                   ]),
                 ),
+                if (monthSpecial > 0) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('$monthSpecial special ${monthSpecial == 1 ? 'day' : 'days'} this month',
+                        style: TextStyle(
+                            color: p.special,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ],
               ],
             ]),
           ),
@@ -228,6 +265,36 @@ class _CalState extends ConsumerState<CalendarPage> {
                   icon: Icons.auto_awesome),
             ),
           ],
+          if (selRange != null) ...[
+            const SizedBox(height: 8),
+            AppCard(
+              radius: 18,
+              padding: const EdgeInsets.all(12),
+              color: p.specialSoft,
+              borderColor: p.special.withValues(alpha: .35),
+              child: Builder(builder: (_) {
+                final n = daysBetween(selRange.startDate, sel) + 1;
+                final total = selRange.length(today);
+                final ongoing = selRange.end == null;
+                return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          ongoing ? 'Day $n · ongoing' : 'Day $n of $total',
+                          style: TextStyle(
+                              color: p.special,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15)),
+                      const SizedBox(height: 2),
+                      Text(
+                          ongoing
+                          ? 'Started ${fmtDay(selRange.startDate, today)} · $total ${total == 1 ? 'day' : 'days'} so far'
+                              : '${fmtDay(selRange.startDate, today)} to ${fmtDay(selRange.lastDay(today), today)} · $total ${total == 1 ? 'day' : 'days'} in total',
+                          style: TextStyle(color: p.muted, fontSize: 12)),
+                    ]);
+              }),
+            ),
+          ],
           if (ev != null) ...[
             const SizedBox(height: 8),
             Align(
@@ -239,6 +306,7 @@ class _CalState extends ConsumerState<CalendarPage> {
           ],
           const SizedBox(height: 10),
           PrayerTiles(sel),
+          const SpecialHistoryCard(),
         ]);
   }
 }

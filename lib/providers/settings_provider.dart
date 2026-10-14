@@ -12,6 +12,9 @@ class Settings {
   final int hijriAdj; // -1, 0, +1
   final int themeMode; // 0 system, 1 light, 2 dark (same order as ThemeMode)
   final int style; // 0-3 watch style
+  final bool hijriMaghrib; // Hijri day starts at Maghrib (sunset)
+  final String customName; // used when city == customCityIndex
+  final double customLat, customLng;
 
   /// Per prayer [fajr, dhuhr, asr, maghrib, isha]:
   /// minute offset from the calculated time, and an exact time (minutes after
@@ -26,9 +29,19 @@ class Settings {
     required this.hijriAdj,
     required this.themeMode,
     required this.style,
+    required this.hijriMaghrib,
+    required this.customName,
+    required this.customLat,
+    required this.customLng,
     required this.offsets,
     required this.fixed,
   });
+
+  bool get isCustom => city == customCityIndex;
+
+  /// The location prayer times are calculated for.
+  City get place =>
+      isCustom ? City(customName, customLat, customLng) : cities[city];
 
   bool customAt(int i) => offsets[i] != 0 || fixed[i] >= 0;
   bool get anyCustom => List.generate(5, customAt).any((e) => e);
@@ -40,6 +53,10 @@ class Settings {
     int? hijriAdj,
     int? themeMode,
     int? style,
+    bool? hijriMaghrib,
+    String? customName,
+    double? customLat,
+    double? customLng,
     List<int>? offsets,
     List<int>? fixed,
   }) =>
@@ -50,6 +67,10 @@ class Settings {
         hijriAdj: hijriAdj ?? this.hijriAdj,
         themeMode: themeMode ?? this.themeMode,
         style: style ?? this.style,
+        hijriMaghrib: hijriMaghrib ?? this.hijriMaghrib,
+        customName: customName ?? this.customName,
+        customLat: customLat ?? this.customLat,
+        customLng: customLng ?? this.customLng,
         offsets: offsets ?? this.offsets,
         fixed: fixed ?? this.fixed,
       );
@@ -61,16 +82,25 @@ class SettingsNotifier extends Notifier<Settings> {
     return (l != null && l.length == 5) ? l : List.filled(5, fallback);
   }
 
+  static int _readCity(int? v) {
+    if (v == customCityIndex) return v!;
+    return (v ?? 0).clamp(0, cities.length - 1);
+  }
+
   @override
   Settings build() {
     final p = ref.read(prefsProvider);
     return Settings(
-      city: (p.getInt('city') ?? 0).clamp(0, cities.length - 1),
+      city: _readCity(p.getInt('city')),
       hanafi: p.getBool('hanafi') ?? true,
       restEnabled: p.getBool('restOn') ?? false,
       hijriAdj: (p.getInt('hAdj') ?? 0).clamp(-1, 1),
       themeMode: (p.getInt('theme') ?? 0).clamp(0, 2),
       style: (p.getInt('watchStyle') ?? 0).clamp(0, watchStyles.length - 1),
+      hijriMaghrib: p.getBool('hMag') ?? false,
+      customName: p.getString('cName') ?? 'My location',
+      customLat: p.getDouble('cLat') ?? 0,
+      customLng: p.getDouble('cLng') ?? 0,
       offsets: _list(p.getStringList('pOff'), 0),
       fixed: _list(p.getStringList('pFix'), -1),
     );
@@ -79,6 +109,25 @@ class SettingsNotifier extends Notifier<Settings> {
   void setCity(int v) {
     state = state.copyWith(city: v);
     ref.read(prefsProvider).setInt('city', v);
+  }
+
+  void setHijriMaghrib(bool v) {
+    state = state.copyWith(hijriMaghrib: v);
+    ref.read(prefsProvider).setBool('hMag', v);
+  }
+
+  /// Use any place on Earth (the device's timezone is used for display).
+  void setCustomLocation(String name, double lat, double lng) {
+    state = state.copyWith(
+        city: customCityIndex,
+        customName: name,
+        customLat: lat,
+        customLng: lng);
+    final p = ref.read(prefsProvider);
+    p.setInt('city', customCityIndex);
+    p.setString('cName', name);
+    p.setDouble('cLat', lat);
+    p.setDouble('cLng', lng);
   }
 
   void setHanafi(bool v) {

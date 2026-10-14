@@ -16,7 +16,7 @@ const specialIdeas = [
   'SubhanAllah ×33',
   'Durood Shareef ×100',
   'Alhamdulillah ×33',
-  'Dua ya Quran sunna',
+  'Dua or listen to Quran',
 ];
 
 const months = [
@@ -68,4 +68,26 @@ const cities = [
   City('Lucknow', 26.8467, 80.9462),
   City('Ahmedabad', 23.0225, 72.5714),
   madinah,
+  // Added in v1.4 (append-only, saved index points into this list).
+  City('Aurangabad', 19.8762, 75.3433),
+  City('Nagpur', 21.1458, 79.0882),
+  City('Surat', 21.1702, 72.8311),
+  City('Jaipur', 26.9124, 75.7873),
+  City('Bhopal', 23.2599, 77.4126),
+  City('Malegaon', 20.5579, 74.5089),
+  City('Dhule', 20.9042, 74.7749),
+  City('Jalgaon', 21.0077, 75.5626),
+  City('Kolhapur', 16.705, 74.2433),
+  City('Solapur', 17.6599, 75.9064),
+  City('Thane', 19.2183, 72.9781),
+  City('Patna', 25.5941, 85.1376),
+  City('Srinagar', 34.0837, 74.7973),
+  City('Kochi', 9.9312, 76.2673),
+  City('Karachi', 24.8607, 67.0011),
+  City('Lahore', 31.5204, 74.3587),
+  City('Dhaka', 23.8103, 90.4125),
+  City('Dubai', 25.2048, 55.2708),
 ];
+
+/// `Settings.city` equal to this value means "the custom location".
+const customCityIndex = 1000;

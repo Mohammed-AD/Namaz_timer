@@ -10,7 +10,6 @@ import '../../providers/clock_provider.dart';
 import '../../providers/log_provider.dart';
 import '../../providers/prayer_times_provider.dart';
 import '../../providers/rest_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/stats_provider.dart';
 import '../../widgets/common.dart';
 import 'heat_painter.dart';
@@ -58,8 +57,8 @@ class _NamazState extends ConsumerState<NamazPage> {
     final restOn = ref.watch(restEnabledProvider);
     final rest = ref.watch(restProvider);
     final streak = ref.watch(streakProvider);
-    final adj = ref.watch(settingsProvider.select((s) => s.hijriAdj));
-    final hj = hijriOf(today, adj);
+    final hj = ref.watch(hijriNowProvider);
+    final window = ref.watch(currentWindowProvider);
     final special = restOn && rest.isRest(today);
     final c = special ? slog.count(today) : log.count(today);
     final tint = special ? p.special : p.accent;
@@ -70,7 +69,7 @@ class _NamazState extends ConsumerState<NamazPage> {
 
     String headline() {
       if (special) {
-        return c == 5 ? 'MashaAllah, aaj ka dhikr poora' : 'Aaj aapka special day hai';
+        return c == 5 ? "MashaAllah, today's dhikr is complete" : 'Today is a special day';
       }
       if (c == 0) return 'Bismillah, shuru karein';
       if (c == 5) return 'MashaAllah! Aaj ki saari namaz poori';
@@ -116,6 +115,12 @@ class _NamazState extends ConsumerState<NamazPage> {
               Pill('${prayers[nx.$1]} ${fmt(nx.$2)} · ${dur(nx.$2.difference(now))}',
                   tint,
                   icon: Icons.schedule),
+              if (window != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                    '${prayers[window.index]} ka waqt chal raha hai · ${dur(window.end.difference(now))} baaki',
+                    style: TextStyle(color: p.muted, fontSize: 12)),
+              ],
             ]),
           ),
         ]),
