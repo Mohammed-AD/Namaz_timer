@@ -50,18 +50,18 @@ class HolyTimesService {
 
     final cached = _readCache(d);
     final fetchedAt = cached?.fetchedAt;
-    if (!force &&
-        cached != null &&
-        fetchedAt != null &&
-        DateTime.now().difference(fetchedAt) < _cacheTtl) {
-      // A cache entry younger than the TTL IS the live schedule, so report it
-      // as live instead of showing a misleading "offline / cached" icon.
-      return HolyTimesFetchResult(
-        makkah: cached.makkah,
-        madinah: cached.madinah,
-        source: HolyTimesSource.liveApi,
-        fetchedAt: fetchedAt,
-      );
+    if (!force && cached != null && fetchedAt != null) {
+      final age = DateTime.now().difference(fetchedAt);
+      if (!age.isNegative && age < _cacheTtl) {
+        // Reusing a recent cache avoids a network request, but it is not a
+        // live response from this load. Keep the source truthful for the UI.
+        return HolyTimesFetchResult(
+          makkah: cached.makkah,
+          madinah: cached.madinah,
+          source: HolyTimesSource.cache,
+          fetchedAt: fetchedAt,
+        );
+      }
     }
 
     try {
@@ -73,7 +73,7 @@ class HolyTimesService {
         makkah: values[0],
         madinah: values[1],
         source: HolyTimesSource.liveApi,
-        fetchedAt: DateTime.now(),
+        fetchedAt: DateTime.now().toUtc(),
       );
       await _writeCache(cacheKey, d, result);
       return result;
@@ -148,6 +148,9 @@ class HolyTimesService {
 
     final hour = int.parse(match.group(1)!);
     final minute = int.parse(match.group(2)!);
+    if (hour > 23 || minute > 59) {
+      throw Exception('Out-of-range prayer time: $raw');
+    }
     final saudiWall = DateTime(day.year, day.month, day.day, hour, minute);
     return wallClockToUtc(saudiWall, holyUtcMinutes);
   }

@@ -54,8 +54,9 @@ void main() {
     );
     final cached = await cachedService.load(DateTime(2026, 10, 6));
 
-    // Younger than the 15-minute TTL, so it is still the live schedule.
-    expect(cached.source, HolyTimesSource.liveApi);
+    // A fresh cache is fast to reuse, but must not be reported as a live
+    // network response when this load did not contact the API.
+    expect(cached.source, HolyTimesSource.cache);
     expect(cached.makkah.fajr, result.makkah.fajr);
   });
 
@@ -93,6 +94,54 @@ void main() {
     expect(calls, 2); // served from cache
     await service.load(DateTime(2026, 10, 6), force: true);
     expect(calls, 4); // forced network load
+  });
+
+  test('rejects out-of-range API prayer times and falls back safely', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final fallback = HolyTimesFetchResult(
+      makkah: DayTimes(
+        DateTime.utc(2026, 10, 6, 1),
+        DateTime.utc(2026, 10, 6, 2),
+        DateTime.utc(2026, 10, 6, 9),
+        DateTime.utc(2026, 10, 6, 12),
+        DateTime.utc(2026, 10, 6, 15),
+        DateTime.utc(2026, 10, 6, 16),
+      ),
+      madinah: DayTimes(
+        DateTime.utc(2026, 10, 6, 1),
+        DateTime.utc(2026, 10, 6, 2),
+        DateTime.utc(2026, 10, 6, 9),
+        DateTime.utc(2026, 10, 6, 12),
+        DateTime.utc(2026, 10, 6, 15),
+        DateTime.utc(2026, 10, 6, 16),
+      ),
+      source: HolyTimesSource.localCalculation,
+    );
+    final client = MockClient((_) async => http.Response(
+          jsonEncode({
+            'code': 200,
+            'data': {
+              'timings': {
+                'Fajr': '99:15',
+                'Sunrise': '05:35',
+                'Dhuhr': '12:05',
+                'Asr': '15:25',
+                'Maghrib': '18:20',
+                'Isha': '19:50',
+              },
+            },
+          }),
+          200,
+        ));
+    final service = HolyTimesService(
+      prefs,
+      client: client,
+      localFallback: (_) => fallback,
+    );
+
+    final result = await service.load(DateTime(2026, 10, 6));
+    expect(result.source, HolyTimesSource.localCalculation);
+    expect(result.warning, contains('Internet unavailable'));
   });
 
   test('uses the local schedule when the API is unavailable', () async {

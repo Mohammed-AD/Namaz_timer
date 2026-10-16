@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../providers/clock_provider.dart';
 import '../../providers/wird_provider.dart';
 import '../../widgets/common.dart';
 import 'wird_counter_page.dart';
@@ -18,13 +19,20 @@ class WirdPage extends ConsumerStatefulWidget {
 
 class _WirdPageState extends ConsumerState<WirdPage> {
   int filter = -1; // -1 all, 0 surah, 1 dhikr
+  String query = '';
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
     final items = ref.watch(wirdProvider);
-    final key = dayKey(DateTime.now());
-    final shown = items.where((e) => filter < 0 || e.kind == filter).toList();
+    final key = dayKey(ref.watch(todayProvider));
+    final q = query.trim().toLowerCase();
+    final shown = items.where((e) {
+      final matchesKind = filter < 0 || e.kind == filter;
+      final matchesQuery = q.isEmpty ||
+          e.name.toLowerCase().contains(q) || e.arabic.toLowerCase().contains(q);
+      return matchesKind && matchesQuery;
+    }).toList();
     final doneCount = items.where((e) => e.countFor(key) >= e.target).length;
 
     return Stack(children: [
@@ -43,13 +51,33 @@ class _WirdPageState extends ConsumerState<WirdPage> {
                 onSelected: (_) => setState(() => filter = f.$1)),
         ]),
         const SizedBox(height: 12),
+        TextField(
+          onChanged: (v) => setState(() => query = v),
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search),
+            hintText: 'Wird search karein',
+            suffixIcon: query.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Clear search',
+                    onPressed: () => setState(() => query = ''),
+                    icon: const Icon(Icons.close),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 12),
         if (shown.isEmpty)
           AppCard(
             child: Column(children: [
               Icon(Icons.menu_book_outlined, size: 40, color: p.faint),
               const SizedBox(height: 8),
-              Text('Abhi kuch nahi hai. "Naya jodein" dabayein.',
-                  style: TextStyle(color: p.muted)),
+              Text(
+                query.trim().isNotEmpty
+                    ? 'Koi wird match nahi hua.'
+                    : 'Abhi kuch nahi hai. "Naya jodein" dabayein.',
+                style: TextStyle(color: p.muted),
+                textAlign: TextAlign.center,
+              ),
             ]),
           ),
         for (final e in shown)
@@ -78,7 +106,7 @@ class _WirdCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
-    final c = item.countFor(dayKey(DateTime.now()));
+    final c = item.countFor(dayKey(ref.watch(todayProvider)));
     final done = c >= item.target;
     final color = done ? p.gold : p.accent;
     return AppCard(

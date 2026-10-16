@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../providers/clock_provider.dart';
 import '../../providers/wird_provider.dart';
 import '../../widgets/common.dart';
 import 'wird_editor.dart';
@@ -21,7 +22,7 @@ class WirdCounterPage extends ConsumerWidget {
     if (found.isEmpty) return const Scaffold(body: SizedBox());
     final item = found.first;
     final n = ref.read(wirdProvider.notifier);
-    final c = item.countFor(dayKey(DateTime.now()));
+    final c = item.countFor(dayKey(ref.watch(todayProvider)));
     final done = c >= item.target;
 
     return Scaffold(

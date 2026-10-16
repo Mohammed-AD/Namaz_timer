@@ -14,6 +14,22 @@ DayTimes day(int d) => DayTimes(
     );
 
 void main() {
+  group('isValidCoordinates', () {
+    test('accepts valid coordinates including boundary values', () {
+      expect(isValidCoordinates(19.9975, 73.7898), isTrue);
+      expect(isValidCoordinates(-90, -180), isTrue);
+      expect(isValidCoordinates(90, 180), isTrue);
+    });
+
+    test('rejects missing, out-of-range, infinite and NaN coordinates', () {
+      expect(isValidCoordinates(null, 10), isFalse);
+      expect(isValidCoordinates(91, 10), isFalse);
+      expect(isValidCoordinates(10, 181), isFalse);
+      expect(isValidCoordinates(double.infinity, 10), isFalse);
+      expect(isValidCoordinates(10, double.nan), isFalse);
+    });
+  });
+
   group('qiblaBearing', () {
     test('Nashik points a little north of west (~279 degrees)', () {
       final q = qiblaBearing(cities[0]);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
+import '../../core/prayer_utils.dart';
 import '../../core/theme.dart';
 import '../../providers/settings_provider.dart';
 
@@ -68,7 +69,7 @@ class _CityPickerState extends ConsumerState<_CityPicker> {
               onPressed: () {
                 final la = double.tryParse(lat.text.trim());
                 final lo = double.tryParse(lng.text.trim());
-                if (la == null || lo == null || la.abs() > 90 || lo.abs() > 180) {
+                if (!isValidCoordinates(la, lo)) {
                   setD(() => error =
                       'Latitude -90 se 90 aur longitude -180 se 180 ke beech hona chahiye');
                   return;
@@ -87,6 +88,9 @@ class _CityPickerState extends ConsumerState<_CityPicker> {
           n, double.parse(lat.text.trim()), double.parse(lng.text.trim()));
       if (mounted) Navigator.pop(context);
     }
+    name.dispose();
+    lat.dispose();
+    lng.dispose();
   }
 
   @override

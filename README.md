@@ -1,4 +1,4 @@
-# Namaz Timer (v1.4)
+# Namaz Timer (v1.4.3)
 
 Namaz tracker, Hijri calendar, Wird (surah + dhikr), timer, and live Makkah/Madinah prayer sync. State: **Riverpod**.
 
@@ -44,7 +44,7 @@ Old dhikr counter data is replaced by the new Wird list (defaults are seeded).
 
 **Fixes**
 - Manual refresh in the Makkah/Madinah sheet now really re-fetches (it used to return the 15-min cache).
-- A cache entry younger than 15 min is shown as "Live", not as a misleading offline/cached icon.
+- Cached prayer timings are labelled as cached (not "Live") when the current load did not contact the API.
 - The live-sync loop stops when its provider is disposed.
 - "Ayyam al-Bidh · sunnah roza" no longer shows during Ramadan (13-15 Ramadan are obligatory fasts).
 - The orphaned watch face is reachable again: tap the mini clock in the top bar (always dark, so hands stay visible).
@@ -64,3 +64,37 @@ Old dhikr counter data is replaced by the new Wird list (defaults are seeded).
 - Calendar: special days are one connected band with a sparkle icon; tap a day for "Din 3 / 6" and the start - end dates.
 - Calendar: month count ("Is mahine me N special din") and a "Special days ka record" card (every run, duration, average, cycle, gentle estimate of the next one, delete wrong entries).
 - Namaz tab: start from today / yesterday / any date; end by choosing the last special day; shows start date, day count and the previous duration.
+
+
+## v1.4.1 review improvements
+
+- Makkah / Madinah timing status now distinguishes a recent cached result from a response fetched live in the current load; cache age checks also handle future timestamps safely.
+- Invalid API clock values are rejected so malformed responses fall back to cached/local timings.
+- Custom coordinates reject non-finite values such as `NaN`.
+- Wird daily counters subscribe to the app's day boundary and refresh after midnight; the Wird tab also supports searching by name or Arabic text.
+- Backup restore rejects unsupported backup versions instead of silently attempting an incompatible import.
+
+## Verification note
+
+The included unit/widget tests were expanded for cached source labeling, malformed API times, coordinate validation, backup-version rejection, and settings persistence/manual time overrides. The review environment did not have the Flutter/Dart SDK available, so `flutter test`, `flutter analyze`, and platform builds still need to be run in a Flutter-enabled environment before release.
+
+
+## v1.4.3 — Special Days + Calendar refinement
+
+- Calendar refreshed with a clear today banner, improved Hijri month navigation, accessible day labels, and distinct markers for notable Hijri dates, prayer/dhikr activity, and recorded special days.
+- Added an upcoming notable-dates agenda. Dates are explicitly described as estimates because local moon sighting and community conventions may differ.
+- Selected-day details now combine Hijri/Gregorian dates, event context, special-day duration, and prayer/dhikr log.
+- Added quick start/finish controls for a special-day record directly on the Calendar tab, with confirmations and date validation.
+- Refined special-day history with compact summary stats, more explicit estimate wording, stronger delete confirmation, and on-device privacy/backup hints.
+- Fixed an edge case where an ongoing special-day record incorrectly coloured future calendar dates as special.
+- Added regression tests for future-date marking and overlapping/out-of-range records.
+
+Build verification remains pending in a Flutter-enabled environment. See `ANDROID_COMPATIBILITY.md` and `SPECIAL_DAYS_CALENDAR.md` for exact smoke-test steps.
+
+## v1.4.4+9 — Compact Calendar Layout Fix
+
+- Fixed the calendar's tightly constrained day cells for small Android display widths.
+- Reduced the vertical footprint of Hijri/Gregorian labels and event/progress markers.
+- Made grid cells slightly taller to keep the date and indicators balanced without `RenderFlex` bottom overflow.
+- Added a compact-width widget regression test (`test/calendar_layout_test.dart`).
+- Flutter analyzer, tests, and APK builds must still be run in a Flutter-enabled environment before release.

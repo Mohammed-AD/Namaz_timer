@@ -52,7 +52,15 @@ class SpecialCard extends ConsumerWidget {
         ]),
       ),
     );
-    if (from != null) ref.read(restProvider.notifier).start(from);
+    if (from != null) {
+      if (!ref.read(restProvider).canStart(from, today: today)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('That date overlaps a saved record. Choose a date after your previous record.'),
+        ));
+        return;
+      }
+      ref.read(restProvider.notifier).start(from);
+    }
   }
 
   Future<void> _end(BuildContext context, WidgetRef ref, DateTime today,
@@ -143,7 +151,7 @@ class SpecialCard extends ConsumerWidget {
                 icon: Icons.event_available_outlined),
             const SizedBox(height: 10),
             Text(
-                'Namaz is waived today. This is Allah\'s ease. Stay connected with a little dhikr or dua at each prayer time. Your streak is safe and nothing is missed.',
+                'Your special-day record is active. This app pauses prayer tracking for these dates and offers a gentle dhikr or dua routine instead. Your prayer history and streak are preserved.',
                 style: TextStyle(color: p.muted, fontSize: 13, height: 1.4)),
             const SizedBox(height: 14),
             Row(children: [

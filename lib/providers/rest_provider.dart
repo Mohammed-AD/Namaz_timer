@@ -21,8 +21,15 @@ class RestRange {
     return RestRange(l[0], l[1].isEmpty ? null : l[1]);
   }
 
-  bool covers(String k) =>
-      k.compareTo(start) >= 0 && (end == null || k.compareTo(end!) <= 0);
+  /// An open run covers dates from its start through today, never future dates.
+  /// Capping it here prevents a future calendar month from appearing as if a
+  /// special-day run had already happened. A caller may pass an explicit
+  /// [throughKey] when it has a deterministic clock in tests.
+  bool covers(String k, {String? throughKey}) =>
+      k.compareTo(start) >= 0 &&
+      (end == null
+          ? k.compareTo(throughKey ?? dayKey(DateTime.now())) <= 0
+          : k.compareTo(end!) <= 0);
 
   DateTime get startDate => parseKey(start);
 
@@ -41,10 +48,11 @@ class RestState {
   final int done, extra;
   const RestState({this.ranges = const [], this.done = 0, this.extra = 0});
 
-  bool isRest(DateTime d) {
+  bool isRest(DateTime d, {DateTime? today}) {
     final k = dayKey(d);
+    final through = dayKey(dayOnly(today ?? DateTime.now()));
     for (final r in ranges) {
-      if (r.covers(k)) return true;
+      if (r.covers(k, throughKey: through)) return true;
     }
     return false;
   }
@@ -53,12 +61,23 @@ class RestState {
       ranges.isNotEmpty && ranges.last.end == null ? ranges.last : null;
 
   /// The run that contains [d], if any.
-  RestRange? rangeOf(DateTime d) {
+  RestRange? rangeOf(DateTime d, {DateTime? today}) {
     final k = dayKey(d);
+    final through = dayKey(dayOnly(today ?? DateTime.now()));
     for (final r in ranges) {
-      if (r.covers(k)) return r;
+      if (r.covers(k, throughKey: through)) return r;
     }
     return null;
+  }
+
+  /// Whether a new run may begin on [date] without future-dating or overlap.
+  bool canStart(DateTime date, {DateTime? today}) {
+    if (open != null || dayOnly(date).isAfter(dayOnly(today ?? DateTime.now()))) {
+      return false;
+    }
+    if (ranges.isEmpty) return true;
+    final end = ranges.last.end;
+    return end != null && dayKey(dayOnly(date)).compareTo(end) > 0;
   }
 
   /// Finished runs only, oldest first.

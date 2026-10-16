@@ -3,6 +3,18 @@ import 'dart:math' as math;
 import 'constants.dart';
 import 'day_times.dart';
 
+/// Validate coordinates before they reach the prayer-time calculation engine.
+/// Finite checks are important because comparisons with NaN are always false.
+bool isValidCoordinates(double? latitude, double? longitude) =>
+    latitude != null &&
+    longitude != null &&
+    latitude.isFinite &&
+    longitude.isFinite &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180;
+
 /// Initial great-circle bearing (degrees clockwise from true north, 0-360)
 /// from [from] to the Kaaba in Makkah.
 double qiblaBearing(City from) {

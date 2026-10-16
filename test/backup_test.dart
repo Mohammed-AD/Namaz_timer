@@ -28,10 +28,19 @@ void main() {
     expect(fresh.getStringList('pOff'), ['0', '2', '0', '0', '-1']);
   });
 
-  test('rejects text that is not a Namaz backup', () async {
+  test(
+      'rejects text that is not a Namaz backup or uses an unsupported version',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
-    expect(() => importBackup(prefs, 'hello'), throwsFormatException);
-    expect(() => importBackup(prefs, '{"app":"other"}'), throwsFormatException);
+    await expectLater(importBackup(prefs, 'hello'), throwsFormatException);
+    await expectLater(
+      importBackup(prefs, '{"app":"other"}'),
+      throwsFormatException,
+    );
+    await expectLater(
+      importBackup(prefs, '{"app":"namaz_app","v":99,"data":{}}'),
+      throwsFormatException,
+    );
   });
 }

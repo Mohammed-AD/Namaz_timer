@@ -97,7 +97,7 @@ class _TimesSheet extends ConsumerWidget {
                     : holy.source == HolyTimesSource.liveApi
                         ? Icons.cloud_done_rounded
                         : holy.source == HolyTimesSource.cache
-                            ? Icons.cloud_off_rounded
+                            ? Icons.history_rounded
                             : Icons.offline_bolt_rounded,
                 size: 15,
                 color: holy.source == HolyTimesSource.liveApi
@@ -159,7 +159,7 @@ class _TimesSheet extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             holy.warning ??
-                'Live source: AlAdhan API. Local masjid / government schedules can differ by a few minutes.',
+                'Schedule source: AlAdhan API (Umm al-Qura). Local masjid / government schedules can differ by a few minutes.',
             style: TextStyle(color: p.muted, fontSize: 11, height: 1.35),
           ),
           const SizedBox(height: 14),

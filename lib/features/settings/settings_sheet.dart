@@ -173,7 +173,7 @@ class _SettingsSheet extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Special days (optional)'),
                 subtitle: Text(
-                    'For the days when namaz is not obligatory. When on, those days show a dhikr routine instead of namaz tracking. Off by default.',
+                    'For days when you want to pause namaz tracking. These dates show a dhikr routine instead. Off by default.',
                     style: TextStyle(fontSize: 12, color: p.muted)),
                 value: s.restEnabled,
                 onChanged: n.setRestEnabled,

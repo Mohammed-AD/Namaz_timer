@@ -31,6 +31,10 @@ Future<int> importBackup(SharedPreferences p, String text) async {
   if (root is! Map || root['app'] != 'namaz_app' || root['data'] is! Map) {
     throw const FormatException('Yeh Namaz app ka backup nahi hai');
   }
+  if (root['v'] != 1) {
+    throw const FormatException(
+        'Backup version supported nahi hai. App ka compatible backup use karein.');
+  }
   final data = Map<String, dynamic>.from(root['data'] as Map);
   var n = 0;
   for (final k in backupKeys) {

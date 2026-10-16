@@ -72,6 +72,27 @@ void main() {
     c.dispose();
   });
 
+  test('an ongoing special-day run never marks future calendar dates', () {
+    final now = dayOnly(DateTime.now());
+    final state = RestState(ranges: [RestRange(dayKey(shift(now, -2)))]);
+
+    expect(state.isRest(now, today: now), isTrue);
+    expect(state.isRest(shift(now, 1), today: now), isFalse);
+    expect(state.rangeOf(shift(now, 1), today: now), isNull);
+    expect(state.canStart(now, today: now), isFalse);
+  });
+
+  test('a new special-day run can only start after the previous range', () {
+    final now = dayOnly(DateTime.now());
+    final state = RestState(ranges: [
+      RestRange(dayKey(shift(now, -8)), dayKey(shift(now, -3))),
+    ]);
+
+    expect(state.canStart(now, today: now), isTrue);
+    expect(state.canStart(shift(now, -4), today: now), isFalse);
+    expect(state.canStart(shift(now, 1), today: now), isFalse);
+  });
+
   test('removeAt deletes only that run', () async {
     final c = await make();
     final n = c.read(restProvider.notifier);
