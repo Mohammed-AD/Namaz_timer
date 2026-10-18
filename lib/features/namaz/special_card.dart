@@ -52,15 +52,14 @@ class SpecialCard extends ConsumerWidget {
         ]),
       ),
     );
-    if (from != null) {
-      if (!ref.read(restProvider).canStart(from, today: today)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('That date overlaps a saved record. Choose a date after your previous record.'),
-        ));
-        return;
-      }
-      ref.read(restProvider.notifier).start(from);
+    if (from == null || !context.mounted) return;
+    if (!ref.read(restProvider).canStart(from, today: today)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('That date overlaps a saved record. Choose a date after your previous record.'),
+      ));
+      return;
     }
+    ref.read(restProvider.notifier).start(from);
   }
 
   Future<void> _end(BuildContext context, WidgetRef ref, DateTime today,
@@ -98,7 +97,9 @@ class SpecialCard extends ConsumerWidget {
         ]),
       ),
     );
-    if (last != null) ref.read(restProvider.notifier).endLast(last);
+    if (last != null && context.mounted) {
+      ref.read(restProvider.notifier).endLast(last);
+    }
   }
 
   @override
@@ -169,7 +170,7 @@ class SpecialCard extends ConsumerWidget {
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(end: dhikrToday / 5),
                 duration: const Duration(milliseconds: 400),
-                builder: (_, v, __) => LinearProgressIndicator(
+                builder: (_, v, _) => LinearProgressIndicator(
                     value: v,
                     minHeight: 6,
                     color: p.special,

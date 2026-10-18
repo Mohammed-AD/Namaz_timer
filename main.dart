@@ -166,7 +166,7 @@ class _WatchState extends State<WatchPage> {
     final h12 = now.hour % 12 == 0 ? 12 : now.hour % 12;
     return ListenableBuilder(
       listenable: widget.s,
-      builder: (_, __) {
+      builder: (_, _) {
         final st = widget.s.style;
         Widget face;
         if (st == 0) {
@@ -250,7 +250,7 @@ class PrayerTiles extends StatelessWidget {
     final future = dayOnly(d).isAfter(dayOnly(DateTime.now()));
     return ListenableBuilder(
       listenable: s,
-      builder: (_, __) {
+      builder: (_, _) {
         final m = s.mask(d);
         return Column(children: [
           for (var i = 0; i < 5; i++)
@@ -287,7 +287,7 @@ class _NamazState extends State<NamazPage> {
     return ListView(padding: const EdgeInsets.all(16), children: [
       ListenableBuilder(
         listenable: widget.s,
-        builder: (_, __) => Text('Today: ${widget.s.count(today)}/5 namaz',
+        builder: (_, _) => Text('Today: ${widget.s.count(today)}/5 namaz',
             style: const TextStyle(fontSize: 24, color: gold, fontWeight: FontWeight.w600)),
       ),
       const SizedBox(height: 8),
@@ -302,7 +302,7 @@ class _NamazState extends State<NamazPage> {
         scrollDirection: Axis.horizontal,
         child: ListenableBuilder(
           listenable: widget.s,
-          builder: (_, __) => RepaintBoundary(
+          builder: (_, _) => RepaintBoundary(
             child: CustomPaint(size: const Size(54 * HeatPainter.cell, 7 * HeatPainter.cell), painter: HeatPainter(widget.s, year)),
           ),
         ),
@@ -380,7 +380,7 @@ class _CalState extends State<CalendarPage> {
       const SizedBox(height: 6),
       ListenableBuilder(
         listenable: widget.s,
-        builder: (_, __) => GridView.count(
+        builder: (_, _) => GridView.count(
           crossAxisCount: 7, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
           children: [
             for (var i = 0; i < lead; i++) const SizedBox(),

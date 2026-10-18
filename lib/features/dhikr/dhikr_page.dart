@@ -34,7 +34,7 @@ class DhikrPage extends ConsumerWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: dhikrItems.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => ChoiceChip(
                     label: Text(dhikrItems[i].name),
                     selected: st.preset == i,

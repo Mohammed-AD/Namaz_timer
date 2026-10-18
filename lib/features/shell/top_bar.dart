@@ -8,6 +8,7 @@ import '../../providers/clock_provider.dart';
 import '../../providers/prayer_times_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../settings/settings_sheet.dart';
+import '../watch/watch_face.dart';
 import '../watch/watch_page.dart';
 import 'times_sheet.dart';
 
@@ -20,6 +21,10 @@ class TopBar extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 4, 4),
         child: Row(children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: const _WatchThumbnail(),
+          ),
           const Expanded(
               child: Align(
                   alignment: Alignment.centerLeft, child: _MiniClock())),
@@ -31,6 +36,33 @@ class TopBar extends StatelessWidget {
           ),
         ]),
       );
+}
+
+class _WatchThumbnail extends ConsumerWidget {
+  const _WatchThumbnail();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(secondProvider).value ?? DateTime.now();
+    final style = ref.watch(settingsProvider.select((s) => s.style));
+    return Semantics(
+      image: true,
+      label: 'Watch face',
+      child: SizedBox.square(
+        dimension: 38,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox.square(
+              dimension: 280,
+              child: WatchFace(now: now, style: style),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MiniClock extends ConsumerWidget {

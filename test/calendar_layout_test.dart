@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:namaz_app/core/theme.dart';
 import 'package:namaz_app/features/calendar/calendar_page.dart';
+import 'package:namaz_app/providers/clock_provider.dart';
 import 'package:namaz_app/providers/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +18,12 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
-      overrides: [prefsProvider.overrideWithValue(prefs)],
+      overrides: [
+        prefsProvider.overrideWithValue(prefs),
+        pulseProvider.overrideWith(
+          (ref) => Stream.value(DateTime(2026, 10, 14)),
+        ),
+      ],
     );
     addTearDown(container.dispose);
 

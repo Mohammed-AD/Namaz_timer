@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:namaz_app/core/constants.dart';
-import 'package:namaz_app/core/format.dart';
 import 'package:namaz_app/providers/prefs_provider.dart';
 import 'package:namaz_app/providers/prayer_times_provider.dart';
 import 'package:namaz_app/providers/settings_provider.dart';

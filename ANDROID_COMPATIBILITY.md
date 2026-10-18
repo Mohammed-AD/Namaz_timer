@@ -38,7 +38,7 @@ The current timer is an in-app Dart timer that plays audio while the process can
 
 ## Current verification status
 
-The editing environment used to prepare this package did not have Flutter or Dart installed, so `flutter analyze`, `flutter test`, APK builds, and physical-device tests could not be run here. This file documents the required validation rather than claiming those tests passed.
+Verified on 2026-10-16 with Flutter 3.44.8: `flutter analyze` reports no issues, all 37 tests pass, `flutter build web` succeeds, and both debug and release APK builds succeed with the API 31 minimum and API 36 target. The release web app was smoke-tested in a browser at desktop and phone widths.
 
 
-Calendar / special-day changes are source-level updates included in version 1.4.3+8. Re-run the widget tests and verify calendar month navigation, moon-sighting adjustment, future-month rendering, start/end flow, and history deletion on Android API 31+ before publishing.
+Physical-device/emulator testing has not been performed. Before publishing, verify installation and the listed calendar, prayer-time, settings, backup/restore, dhikr, timer, audio, rotation, and process-recreation flows on Android API 31+ (and the newest supported API available). Flutter currently warns that Gradle 8.13 support will be dropped in a future release; plan an upgrade to at least Gradle 8.14.

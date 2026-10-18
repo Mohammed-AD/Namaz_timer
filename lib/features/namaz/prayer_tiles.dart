@@ -120,16 +120,17 @@ class _Tile extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [
-                            Text(prayers[i],
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(prayers[i],
                                 style: const TextStyle(
                                     fontSize: 17, fontWeight: FontWeight.w800)),
-                            if (isNext) ...[
-                              const SizedBox(width: 8),
-                              Flexible(
-                                  child: Pill('Next · ${dur(eta!)}', tint)),
+                              if (isNext) Pill('Next · ${dur(eta!)}', tint),
                             ],
-                          ]),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                               special

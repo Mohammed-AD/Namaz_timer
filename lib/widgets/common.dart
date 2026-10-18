@@ -70,7 +70,7 @@ class PageHeader extends StatelessWidget {
             Text(subtitle!, style: TextStyle(color: p.muted, fontSize: 13)),
         ]),
       ),
-      if (trailing != null) trailing!,
+      ?trailing,
     ]);
   }
 }
@@ -129,7 +129,7 @@ class ProgressRing extends StatelessWidget {
             tween: Tween<double>(end: value),
             duration: const Duration(milliseconds: 450),
             curve: Curves.easeOutCubic,
-            builder: (_, v, __) => CircularProgressIndicator(
+            builder: (_, v, _) => CircularProgressIndicator(
                 value: v,
                 strokeWidth: stroke,
                 strokeCap: StrokeCap.round,
